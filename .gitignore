@@ -44,3 +44,4 @@ Temporary Items
 .gradle
 .idea
 bulid
+build/intermediates/gradle_project_sync_data.bin
