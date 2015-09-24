@@ -1,65 +1,55 @@
+/*
+ *    Copyright (C) 2011 Jeff Moyer
+ *
+ *    This program is free software: you can redistribute it and/or modify
+ *    it under the terms of the GNU General Public License as published by
+ *    the Free Software Foundation, either version 3 of the License, or
+ *    (at your option) any later version.
+ *
+ *    This program is distributed in the hope that it will be useful,
+ *    but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *    GNU General Public License for more details.
+ *
+ *    You should have received a copy of the GNU General Public License
+ *    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 package com.example.pawelkrysa.shipvoice;
 
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Handler;
 import android.speech.RecognitionListener;
 import android.speech.RecognizerIntent;
 import android.speech.SpeechRecognizer;
 import android.util.Log;
-import android.view.Menu;
-import android.view.MenuItem;
 import android.view.Window;
 import android.view.WindowManager;
 
 import java.util.ArrayList;
+import java.util.Timer;
+import java.util.TimerTask;
 
+public class Game extends Activity {
+    private static final String TAG = "ShipVoice";
 
-public class Game extends Activity implements RecognitionListener {
-
+    private SpeechRecognizer mSpeechRecognizer;
+    private Intent mRecognizerIntent;
     private GamePanel gamePanel;
+    private Timer timer;
+    private TimerTask timerTask;
 
-    private boolean error = false;
-    private SpeechRecognizer speech = null;
-    private Intent recognizerIntent;
+    final Handler handler = new Handler();
 
-    private String LOG_TAG = "VoiceRecognitionActivity";
-
-    private SpeechRecognizer getSpeechRevognizer(){
-        if (speech == null) {
-            speech = SpeechRecognizer.createSpeechRecognizer(this);
-            speech.setRecognitionListener(this);
-        }
-
-        return speech;
-    }
-
-    private void startListining(){
-        recognizerIntent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
-        recognizerIntent.putExtra(RecognizerIntent.EXTRA_CALLING_PACKAGE,
-                this.getPackageName());
-        recognizerIntent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,
-                RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
-
-        recognizerIntent.putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_MINIMUM_LENGTH_MILLIS, new Long(10000));
-        recognizerIntent.putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS, 0);
-
-        recognizerIntent.putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1);
-
-        speech = SpeechRecognizer.createSpeechRecognizer(this);
-        speech.setRecognitionListener(this);
-        speech.startListening(recognizerIntent);
-    }
-
-
+    /**
+     * Called when the activity is first created.
+     */
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        //set title
         requestWindowFeature(Window.FEATURE_NO_TITLE);
-
-
 
 
         //set full screeen
@@ -67,141 +57,133 @@ public class Game extends Activity implements RecognitionListener {
         gamePanel = new GamePanel(this);
         setContentView(gamePanel);
 
-        startListining();
 
-
+        //startTimer();
+        getSpeechRecognizer(false);
     }
 
-    @Override
-    public void onDestroy(){
-        if(speech != null){
-            speech.destroy();
+    private void getSpeechRecognizer(Boolean isListening) {
+
+        if (!isListening) {
+
+            mRecognizerIntent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
+            mRecognizerIntent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,
+                    RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
+            mRecognizerIntent.putExtra(RecognizerIntent.EXTRA_CALLING_PACKAGE, this.getPackageName());
+
+            if (mSpeechRecognizer != null) {
+                mSpeechRecognizer.destroy();
+                mSpeechRecognizer = null;
+            }
+
+            mSpeechRecognizer = SpeechRecognizer.createSpeechRecognizer(this);
+            mSpeechRecognizer.setRecognitionListener(mRecognitionListener);
+            mSpeechRecognizer.startListening(mRecognizerIntent);
         }
     }
 
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_game, menu);
-        return true;
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
-
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
+    private RecognitionListener mRecognitionListener = new RecognitionListener() {
+        @Override
+        public void onBufferReceived(byte[] buffer) {
+            // TODO Auto-generated method stub
+            //Log.d(TAG, "onBufferReceived");
         }
 
-        return super.onOptionsItemSelected(item);
-    }
+        @Override
+        public void onError(int error) {
+            // TODO Auto-generated method stub
+            Log.d(TAG, "onError: " + error);
 
-    @Override
-    public void onBeginningOfSpeech() {
-        Log.i(LOG_TAG, "onBeginningOfSpeech");
-    }
-
-    @Override
-    public void onBufferReceived(byte[] buffer) {
-        Log.i(LOG_TAG, "onBufferReceived: " + buffer);
-    }
-
-    @Override
-    public void onEndOfSpeech() {
-        Log.i(LOG_TAG, "onEndOfSpeech");
-    }
-
-    @Override
-    public void onError(int errorCode) {
-        String errorMessage = getErrorText(errorCode);
-        Log.i(LOG_TAG, "error" + errorMessage);
-    }
-
-    @Override
-    public void onEvent(int arg0, Bundle arg1) {
-        Log.i(LOG_TAG, "onEvent");
-    }
-
-    @Override
-    public void onPartialResults(Bundle arg0) {
-        Log.i(LOG_TAG, "onPartialResults");
-
-    }
-
-    @Override
-    public void onReadyForSpeech(Bundle arg0) {
-        Log.i(LOG_TAG, "onReadyForSpeech");
-    }
-
-    @Override
-    public void onResults(Bundle results) {
-        Log.i(LOG_TAG, "onResults");
-        ArrayList<String> matches = results
-                .getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
-
-        gamePanel.command(matches.get(0));
-        speech.startListening(recognizerIntent);
-
-
-    }
-
-    @Override
-    public void onRmsChanged(float rmsdB) {
-        //Log.i(LOG_TAG, "onRmsChanged: " + rmsdB);
-    }
-
-    public String getErrorText(int errorCode) {
-        String message;
-        Boolean restart = true;
-        switch (errorCode) {
-            case SpeechRecognizer.ERROR_AUDIO:
-                message = "Audio recording error";
-                break;
-            case SpeechRecognizer.ERROR_CLIENT:
-                message = "Client side error";
-                restart = false;
-                break;
-            case SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS:
-                message = "Insufficient permissions";
-                restart = false;
-                break;
-            case SpeechRecognizer.ERROR_NETWORK:
-                message = "Network error";
-                break;
-            case SpeechRecognizer.ERROR_NETWORK_TIMEOUT:
-                message = "Network timeout";
-                break;
-            case SpeechRecognizer.ERROR_NO_MATCH:
-                message = "No match";
-                break;
-            case SpeechRecognizer.ERROR_RECOGNIZER_BUSY:
-                message = "RecognitionService busy";
-                break;
-            case SpeechRecognizer.ERROR_SERVER:
-                message = "error from server";
-                break;
-            case SpeechRecognizer.ERROR_SPEECH_TIMEOUT:
-                message = "No speech input";
-                speech.stopListening();
-                break;
-            default:
-                message = "Didn't understand, please try again.";
-                break;
+            if(error == 5) {
+                mSpeechRecognizer.destroy();
+                getSpeechRecognizer(false);
+            }
+            if(error == 6) {
+                mSpeechRecognizer.stopListening();
+                getSpeechRecognizer(false);
+            }
+            if(error == 7) {
+                getSpeechRecognizer(false);
+            }
         }
-        if(restart) {
-            this.runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    getSpeechRevognizer().cancel();
-                    startListining();
-                }
-            });
+
+        @Override
+        public void onEvent(int eventType, Bundle params) {
+            // TODO Auto-generated method stub
+            //Log.d(TAG, "onEvent");
         }
-        return message;
+
+        @Override
+        public void onPartialResults(Bundle partialResults) {
+            // TODO Auto-generated method stub
+            //Log.d(TAG, "onPartialResults");
+        }
+
+        @Override
+        public void onReadyForSpeech(Bundle params) {
+            // TODO Auto-generated method stub
+            Log.d(TAG, "onReadyForSpeech");
+        }
+
+        @Override
+        public void onResults(Bundle results) {
+
+            ArrayList<String> matches = results
+                    .getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
+
+            Log.d(TAG, "onResults");
+            gamePanel.command(matches.get(0));
+            getSpeechRecognizer(false);
+            //startTimer();
+        }
+
+        @Override
+        public void onRmsChanged(float rmsdB) {
+            // TODO Auto-generated method stub
+            //Log.d(TAG, "onRmsChanged");
+        }
+
+        @Override
+        public void onBeginningOfSpeech() {
+            // TODO Auto-generated method stub
+            //Log.d(TAG, "onBeginningOfSpeech");
+            stopTimetTask();
+        }
+
+        @Override
+        public void onEndOfSpeech() {
+            // TODO Auto-generated method stub
+            Log.d(TAG, "onEndOfSpeech");
+        }
+
+    };
+
+    public void startTimer() {
+        timer = new Timer();
+
+        initializeTimerTask();
+
+        timer.schedule(timerTask, 4000);
+    }
+
+    public void stopTimetTask() {
+        if (timer != null) {
+            timer.cancel();
+            timer = null;
+        }
+    }
+
+    public void initializeTimerTask() {
+
+        timerTask = new TimerTask() {
+
+            public void run() {
+                handler.post(new Runnable() {
+                    public void run() {
+
+                    }
+                });
+            }
+        };
     }
 }
