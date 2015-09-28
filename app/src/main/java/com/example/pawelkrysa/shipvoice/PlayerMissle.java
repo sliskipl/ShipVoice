@@ -6,9 +6,9 @@ import android.graphics.Canvas;
 import java.util.Random;
 
 /**
- * Created by pawel.krysa on 2015-09-02.
+ * Created by pawel.krysa on 2015-09-25.
  */
-public class Missle extends GameObject {
+public class PlayerMissle extends GameObject {
 
     private int score;
     private int speed;
@@ -16,16 +16,13 @@ public class Missle extends GameObject {
     private Animation animation = new Animation();
     private Bitmap spritesheet;
 
-    public Missle(Bitmap res, int x, int y, int w, int h, int s, int numFrames) {
+    public PlayerMissle(Bitmap res, int x, int y, int w, int h, int numFrames) {
         super.x = x;
         super.y = y;
         width = w;
         height = h;
-        score = s;
 
-        speed = 5 + (int) (rand.nextDouble() * score / 30);
-
-        if (speed >= 20) speed = 30;
+        speed = 25;
 
         Bitmap[] image = new Bitmap[numFrames];
 
@@ -37,12 +34,10 @@ public class Missle extends GameObject {
 
         animation.setFrames(image);
         animation.setDelay(100 - speed);
-
-
     }
 
     public void update() {
-        x -= speed;
+        x += speed;
         animation.update();
     }
 

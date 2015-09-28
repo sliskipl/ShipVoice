@@ -9,7 +9,6 @@ import android.graphics.Canvas;
 public class Player extends GameObject {
     private Bitmap spritesheet;
     private int score;
-    private int up = 0;
     private boolean playing = false;
     private Animation animation = new Animation();
     private long startTime;
